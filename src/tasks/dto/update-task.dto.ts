@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 
 import { BadRequestException } from '@nestjs/common';
-import { TaskStatus } from '../tasks.model';
+import { TaskStatus } from '../task-status';
 
 export class UpdateTaskDTO {
   id: string;

@@ -1,15 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Task, TaskStatus } from './tasks.model';
-import { v4 as uuid } from 'uuid';
+import { TaskStatus } from './task-status';
+import { v4 as uuid } from 'uuid'; // Its going to be removed yarn remove uuid
 import { CreateTaskDTO } from './dto/create-task.dto';
 import { UpdateTaskDTO } from './dto/update-task.dto';
 import { GetTasksFilterDTO } from './dto/get-tasks-filter.dto';
+import { Task } from './task.entity';
+import { TaskRespository } from './task.repository';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 /**
  * Service that manage the database actions to get, create, update or delete a task
  */
 export class TasksService {
+  constructor(
+    @InjectRepository(TaskRespository) private tasksRepository: TaskRespository,
+  ) {}
   // It's private for manage all the actions in this service
   private tasks: Task[] = [];
 
@@ -31,27 +37,8 @@ export class TasksService {
 }
    * @returns The same Task created
    */
-  createTask(task: Task): Task {
-    this.tasks.push(task);
-    return task;
-  }
-
-  /**
-   * Method to initialize the task variable based on the information of the post http request
-   * @Input Body request with the format of the task
-   * @returns Task in the correct format
-   */
-  getTaskParametersFromRequest(body: CreateTaskDTO): Task {
-    // Get parameters from the body
-    const { title, description } = body;
-
-    const task: Task = {
-      id: uuid(),
-      title,
-      description,
-      status: TaskStatus.DONE,
-    };
-    return task;
+  createTask(body: CreateTaskDTO): Promise<Task> {
+    return this.tasksRepository.createTask(body);
   }
 
   /**
@@ -59,9 +46,9 @@ export class TasksService {
    * @param id Identifier of the task
    * @returns The task that you are looking for, or an empty array
    */
-  getTaskById(id: string) {
+  async getTaskById(id: string): Promise<Task> {
     // Try to get a task
-    const found = this.tasks.find((task) => task.id === id);
+    const found = await this.tasksRepository.findOne(id);
 
     // If not found, throw an error (404 not found)
     if (!found) {
@@ -79,9 +66,9 @@ export class TasksService {
    * @returns If there was an deletion of a task, or if not task with
    * that id was found
    */
-  deleteTaskById(id: string): string {
+  async deleteTaskById(id: string): Promise<string> {
     // Verify that the Task exist, If not, throw an error
-    const found = this.getTaskById(id);
+    const found = await this.getTaskById(id);
 
     // Otherwise, delete the task and return a msg of confirmation
     this.tasks = this.tasks.filter((task) => task.id == found.id);
@@ -95,9 +82,9 @@ export class TasksService {
    * @param body Has the id of the task and the new status
    * @returns A task updated, or not found if there are any task with that id
    */
-  updateTaskStatus(body: UpdateTaskDTO): Task {
+  async updateTaskStatus(body: UpdateTaskDTO): Promise<Task> {
     const { id, status } = body;
-    const taskToUpdate = this.getTaskById(id);
+    const taskToUpdate = await this.getTaskById(id);
     taskToUpdate.status = status;
     return taskToUpdate;
   }

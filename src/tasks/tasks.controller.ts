@@ -11,7 +11,8 @@ import {
 import { CreateTaskDTO } from './dto/create-task.dto';
 import { GetTasksFilterDTO } from './dto/get-tasks-filter.dto';
 import { UpdateTaskDTO } from './dto/update-task.dto';
-import { Task, TaskStatus } from './tasks.model';
+import { TaskStatus } from './task-status';
+import { Task } from './task.entity';
 import { TasksService } from './tasks.service';
 
 @Controller('tasks')
@@ -40,9 +41,8 @@ export class TasksController {
    * @returns The task just created
    */
   @Post()
-  createTask(@Body() body: CreateTaskDTO): Task {
-    const task: Task = this.taskService.getTaskParametersFromRequest(body);
-    return this.taskService.createTask(task);
+  createTask(@Body() body: CreateTaskDTO): Promise<Task> {
+    return this.taskService.createTask(body);
   }
 
   /**
@@ -51,7 +51,7 @@ export class TasksController {
    * @returns  The task that you are looking for, if not found, returns an empty array
    */
   @Get('/:id')
-  getTaskById(@Param('id') id: string): Task {
+  getTaskById(@Param('id') id: string): Promise<Task> {
     return this.taskService.getTaskById(id);
   }
 
@@ -61,8 +61,8 @@ export class TasksController {
    * @returns If the deletion was succesfull, or if there is not element with that ID
    */
   @Delete('/:id')
-  deleteTaskById(@Param('id') id: string): string {
-    return this.taskService.deleteTaskById(id);
+  async deleteTaskById(@Param('id') id: string): Promise<string> {
+    return await this.taskService.deleteTaskById(id);
   }
 
   /**
