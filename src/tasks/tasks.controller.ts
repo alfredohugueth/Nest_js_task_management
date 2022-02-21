@@ -20,7 +20,8 @@ export class TasksController {
 
   /**
    * Method to call tasks from the database based on search parameters or all tasks
-   ** Output: Task[], an array of Tasks
+   * @Input Filter parameters like status or search
+   * @returns Task[], an array of Tasks
    */
   @Get()
   getTask(@Query() filterDTO: GetTasksFilterDTO): Task[] {

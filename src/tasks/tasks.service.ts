@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Task, TaskStatus } from './tasks.model';
 import { v4 as uuid } from 'uuid';
 import { CreateTaskDTO } from './dto/create-task.dto';
@@ -60,7 +60,16 @@ export class TasksService {
    * @returns The task that you are looking for, or an empty array
    */
   getTaskById(id: string) {
-    return this.tasks.find((task) => task.id === id);
+    // Try to get a task
+    const found = this.tasks.find((task) => task.id === id);
+
+    // If not found, throw an error (404 not found)
+    if (!found) {
+      throw new NotFoundException(`Task with Id ${id} not found`);
+    }
+
+    // Otherwise, return the found task
+    return found;
   }
 
   /**
@@ -71,12 +80,13 @@ export class TasksService {
    * that id was found
    */
   deleteTaskById(id: string): string {
-    // Create a temporal array to verify that a task was deleted
-    const temporal_tasks = [...this.tasks];
-    this.tasks = this.tasks.filter((task) => task.id !== id);
-    return this.tasks.length == temporal_tasks.length
-      ? 'Not Found'
-      : 'Deleted correcly';
+    // Verify that the Task exist, If not, throw an error
+    const found = this.getTaskById(id);
+
+    // Otherwise, delete the task and return a msg of confirmation
+    this.tasks = this.tasks.filter((task) => task.id == found.id);
+
+    return 'Deleted correcly';
   }
 
   /**
@@ -85,10 +95,9 @@ export class TasksService {
    * @param body Has the id of the task and the new status
    * @returns A task updated, or not found if there are any task with that id
    */
-  updateTaskStatus(body: UpdateTaskDTO): Task | string {
+  updateTaskStatus(body: UpdateTaskDTO): Task {
     const { id, status } = body;
     const taskToUpdate = this.getTaskById(id);
-    if (!taskToUpdate) return 'Not found';
     taskToUpdate.status = status;
     return taskToUpdate;
   }
