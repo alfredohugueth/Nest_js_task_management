@@ -25,14 +25,10 @@ export class TasksController {
    * @returns Task[], an array of Tasks
    */
   @Get()
-  getTask(@Query() filterDTO: GetTasksFilterDTO): Task[] {
+  getTask(@Query() filterDTO: GetTasksFilterDTO): Promise<Task[]> {
     // If we have any filter defined, call the method to get tasks with filters
     // Otherwise, just get all tasks
-
-    if (Object.keys(filterDTO).length)
-      return this.taskService.getTasksWithFilters(filterDTO);
-
-    return this.taskService.getAllTasks();
+    return this.taskService.getTasks(filterDTO);
   }
 
   /**

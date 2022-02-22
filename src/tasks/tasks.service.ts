@@ -1,6 +1,4 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { TaskStatus } from './task-status';
-import { v4 as uuid } from 'uuid'; // Its going to be removed yarn remove uuid
 import { CreateTaskDTO } from './dto/create-task.dto';
 import { UpdateTaskDTO } from './dto/update-task.dto';
 import { GetTasksFilterDTO } from './dto/get-tasks-filter.dto';
@@ -16,15 +14,13 @@ export class TasksService {
   constructor(
     @InjectRepository(TaskRespository) private tasksRepository: TaskRespository,
   ) {}
-  // It's private for manage all the actions in this service
-  private tasks: Task[] = [];
 
   /**
    *  Method to get all the tasks from the database
    **  Output: Tasks[], an array of tasks
    */
-  getAllTasks(): Task[] {
-    return this.tasks;
+  getTasks(filterDTO: GetTasksFilterDTO): Promise<Task[]> {
+    return this.tasksRepository.getTasks(filterDTO);
   }
 
   /**
@@ -67,11 +63,13 @@ export class TasksService {
    * that id was found
    */
   async deleteTaskById(id: string): Promise<string> {
-    // Verify that the Task exist, If not, throw an error
-    const found = await this.getTaskById(id);
+    // Delete a task given his id
+    const found = await this.tasksRepository.delete(id);
 
-    // Otherwise, delete the task and return a msg of confirmation
-    this.tasks = this.tasks.filter((task) => task.id == found.id);
+    // If affected is equal to 0, that means that there is not
+    // A task with that specific id
+    if (found.affected == 0)
+      throw new NotFoundException(`Task with ID ${id} not found`);
 
     return 'Deleted correcly';
   }
@@ -84,32 +82,14 @@ export class TasksService {
    */
   async updateTaskStatus(body: UpdateTaskDTO): Promise<Task> {
     const { id, status } = body;
+
+    // Get the task to update it, if not found return an 404 error
     const taskToUpdate = await this.getTaskById(id);
     taskToUpdate.status = status;
+
+    // Save the change of status
+    await this.tasksRepository.save(taskToUpdate);
+
     return taskToUpdate;
-  }
-
-  getTasksWithFilters(filterDTO: GetTasksFilterDTO) {
-    const { status, search } = filterDTO;
-
-    // Define a temporal array with all the tasks
-    let tasks = this.getAllTasks();
-
-    // Find if there is any task with the status parameter
-    if (status) {
-      tasks = tasks.filter((task) => task.status == status);
-    }
-
-    // Find if there are any task with the search parameters
-    // In the title or description
-    if (search) {
-      tasks = tasks.filter((task) => {
-        if (task.title.includes(search) || task.description.includes(search)) {
-          return true;
-        }
-      });
-    }
-
-    return tasks;
   }
 }
