@@ -5,6 +5,7 @@ import { GetTasksFilterDTO } from './dto/get-tasks-filter.dto';
 import { Task } from './task.entity';
 import { TaskRespository } from './task.repository';
 import { InjectRepository } from '@nestjs/typeorm';
+import { User } from 'src/auth/user.entity';
 
 @Injectable()
 /**
@@ -19,8 +20,8 @@ export class TasksService {
    *  Method to get all the tasks from the database
    **  Output: Tasks[], an array of tasks
    */
-  getTasks(filterDTO: GetTasksFilterDTO): Promise<Task[]> {
-    return this.tasksRepository.getTasks(filterDTO);
+  getTasks(filterDTO: GetTasksFilterDTO, user: User): Promise<Task[]> {
+    return this.tasksRepository.getTasks(filterDTO, user);
   }
 
   /**
@@ -33,8 +34,8 @@ export class TasksService {
 }
    * @returns The same Task created
    */
-  createTask(body: CreateTaskDTO): Promise<Task> {
-    return this.tasksRepository.createTask(body);
+  createTask(body: CreateTaskDTO, user: User): Promise<Task> {
+    return this.tasksRepository.createTask(body, user);
   }
 
   /**
@@ -42,9 +43,9 @@ export class TasksService {
    * @param id Identifier of the task
    * @returns The task that you are looking for, or an empty array
    */
-  async getTaskById(id: string): Promise<Task> {
+  async getTaskById(id: string, user: User): Promise<Task> {
     // Try to get a task
-    const found = await this.tasksRepository.findOne(id);
+    const found = await this.tasksRepository.findOne({ where: { id, user } });
 
     // If not found, throw an error (404 not found)
     if (!found) {
@@ -62,9 +63,9 @@ export class TasksService {
    * @returns If there was an deletion of a task, or if not task with
    * that id was found
    */
-  async deleteTaskById(id: string): Promise<string> {
+  async deleteTaskById(id: string, user: User): Promise<string> {
     // Delete a task given his id
-    const found = await this.tasksRepository.delete(id);
+    const found = await this.tasksRepository.delete({ id, user });
 
     // If affected is equal to 0, that means that there is not
     // A task with that specific id
@@ -80,11 +81,11 @@ export class TasksService {
    * @param body Has the id of the task and the new status
    * @returns A task updated, or not found if there are any task with that id
    */
-  async updateTaskStatus(body: UpdateTaskDTO): Promise<Task> {
+  async updateTaskStatus(body: UpdateTaskDTO, user: User): Promise<Task> {
     const { id, status } = body;
 
     // Get the task to update it, if not found return an 404 error
-    const taskToUpdate = await this.getTaskById(id);
+    const taskToUpdate = await this.getTaskById(id, user);
     taskToUpdate.status = status;
 
     // Save the change of status

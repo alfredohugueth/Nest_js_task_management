@@ -10,6 +10,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { GetUser } from 'src/auth/get-user.decorator';
+import { User } from 'src/auth/user.entity';
 import { CreateTaskDTO } from './dto/create-task.dto';
 import { GetTasksFilterDTO } from './dto/get-tasks-filter.dto';
 import { UpdateTaskDTO } from './dto/update-task.dto';
@@ -28,10 +30,13 @@ export class TasksController {
    * @returns Task[], an array of Tasks
    */
   @Get()
-  getTask(@Query() filterDTO: GetTasksFilterDTO): Promise<Task[]> {
+  getTask(
+    @Query() filterDTO: GetTasksFilterDTO,
+    @GetUser() user: User,
+  ): Promise<Task[]> {
     // If we have any filter defined, call the method to get tasks with filters
     // Otherwise, just get all tasks
-    return this.taskService.getTasks(filterDTO);
+    return this.taskService.getTasks(filterDTO, user);
   }
 
   /**
@@ -40,8 +45,11 @@ export class TasksController {
    * @returns The task just created
    */
   @Post()
-  createTask(@Body() body: CreateTaskDTO): Promise<Task> {
-    return this.taskService.createTask(body);
+  createTask(
+    @Body() body: CreateTaskDTO,
+    @GetUser() user: User,
+  ): Promise<Task> {
+    return this.taskService.createTask(body, user);
   }
 
   /**
@@ -50,8 +58,8 @@ export class TasksController {
    * @returns  The task that you are looking for, if not found, returns an empty array
    */
   @Get('/:id')
-  getTaskById(@Param('id') id: string): Promise<Task> {
-    return this.taskService.getTaskById(id);
+  getTaskById(@Param('id') id: string, @GetUser() user: User): Promise<Task> {
+    return this.taskService.getTaskById(id, user);
   }
 
   /**
@@ -60,8 +68,11 @@ export class TasksController {
    * @returns If the deletion was succesfull, or if there is not element with that ID
    */
   @Delete('/:id')
-  async deleteTaskById(@Param('id') id: string): Promise<string> {
-    return await this.taskService.deleteTaskById(id);
+  async deleteTaskById(
+    @Param('id') id: string,
+    @GetUser() user: User,
+  ): Promise<string> {
+    return await this.taskService.deleteTaskById(id, user);
   }
 
   /**
@@ -74,8 +85,9 @@ export class TasksController {
   updateTaskStatus(
     @Param('id') id: string,
     @Body('status') status: TaskStatus,
+    @GetUser() user: User,
   ) {
     const body: UpdateTaskDTO = new UpdateTaskDTO(id, status);
-    return this.taskService.updateTaskStatus(body);
+    return this.taskService.updateTaskStatus(body, user);
   }
 }
