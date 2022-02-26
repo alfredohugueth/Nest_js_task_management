@@ -5,9 +5,11 @@ import { CreateTaskDTO } from './dto/create-task.dto';
 import { GetTasksFilterDTO } from './dto/get-tasks-filter.dto';
 import { TaskStatus } from './task-status';
 import { Task } from './task.entity';
+import { InternalServerErrorException, Logger } from '@nestjs/common';
 
 @EntityRepository(Task)
 export class TaskRespository extends Repository<Task> {
+  private logger = new Logger('TasksRepository', { timestamp: true });
   /**
    * Method to initialize the task variable based on the information of the post http request
    * @Input Body request with the format of the task
@@ -49,9 +51,18 @@ export class TaskRespository extends Repository<Task> {
         { search: `%${search}%` },
       );
 
-    // Execute the query and store all the tasks
-    const tasks = await query.getMany();
-
-    return tasks;
+    try {
+      // Execute the query and store all the tasks
+      const tasks = await query.getMany();
+      return tasks;
+    } catch (error) {
+      this.logger.error(
+        `Failed to get tasks for user "${
+          user.userName
+        }". Filters: ${JSON.stringify(filterDTO)}`,
+        error.stack, // Identify the error
+      );
+      throw new InternalServerErrorException();
+    }
   }
 }
